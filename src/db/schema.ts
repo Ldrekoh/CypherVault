@@ -1,5 +1,17 @@
 import { relations } from 'drizzle-orm';
-import { pgTable, text, timestamp, boolean, index, AnyPgColumn, uuid } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  text,
+  timestamp,
+  boolean,
+  index,
+  AnyPgColumn,
+  uuid,
+  pgEnum,
+  integer,
+} from 'drizzle-orm/pg-core';
+
+export const keyTypeEnum = pgEnum('key_type', ['primary', 'recovery']);
 
 export const user = pgTable('user', {
   id: text('id').primaryKey(),
@@ -91,7 +103,7 @@ export const userKeys = pgTable(
     recoveryHash: text('recovery_hash').notNull(),
     salt: text('salt').notNull(),
     // "primary" | "recovery"
-    keyType: text('key_type').notNull().default('primary'),
+    keyType: keyTypeEnum('key_type').notNull().default('primary'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   table => [index('user_keys_userId_idx').on(table.userId)]
@@ -111,8 +123,12 @@ export const folders = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
+    deletedAt: timestamp('deleted_at'),
   },
-  table => [index('folders_userId_idx').on(table.userId)]
+  table => [
+    index('folders_userId_idx').on(table.userId),
+    index('folders_deletedAt_idx').on(table.deletedAt),
+  ]
 );
 
 // 3. Entrées du coffre (métadonnées)
@@ -135,10 +151,12 @@ export const vaultItems = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
+    deletedAt: timestamp('deleted_at'),
   },
   table => [
     index('vault_items_userId_idx').on(table.userId),
     index('vault_items_folderId_idx').on(table.folderId),
+    index('vault_items_deletedAt_idx').on(table.deletedAt),
   ]
 );
 
@@ -156,6 +174,7 @@ export const vaultSecrets = pgTable(
       .references(() => user.id, { onDelete: 'cascade' }),
     // Payload PGP chiffré : { login, password, notes, totp, ... }
     encryptedPayload: text('encrypted_payload').notNull(),
+    payloadVersion: integer('payload_version').notNull().default(1),
     updatedAt: timestamp('updated_at')
       .defaultNow()
       .$onUpdate(() => new Date())
