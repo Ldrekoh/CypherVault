@@ -3,9 +3,9 @@
 import { db } from "@/db/drizzle";
 import { folders } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
-import { revalidatePath } from "next/cache"; // N'oublie pas de revalider !
+import { revalidatePath } from "next/cache";
+import * as z from "zod";
 import { getCurrentUser } from "../auth/auth-action";
-
 interface CreateFolderInput {
   name: string;
 }
@@ -52,11 +52,7 @@ export const getFoldersAction = async () => {
 
     const userFolders = await db.query.folders.findMany({
       where: (folders, { and, eq, isNull }) =>
-        and(
-          eq(folders.userId, currentUser.id), // Dossiers de l'utilisateur
-          isNull(folders.deletedAt), // Qui n'ont PAS de date de suppression
-        ),
-      // Optionnel : trier par date de création
+        and(eq(folders.userId, currentUser.id), isNull(folders.deletedAt)),
       orderBy: (folders, { desc }) => [desc(folders.createdAt)],
     });
 
@@ -76,6 +72,11 @@ export const getFoldersAction = async () => {
 
 export const softDeleteFolderAction = async (folderId: string) => {
   try {
+    const folderIdCheck = z.string().uuid().safeParse(folderId);
+    if (!folderIdCheck.success) {
+      return { success: false, message: "Invalid folder id" };
+    }
+
     const { currentUser } = await getCurrentUser();
 
     if (!currentUser) {

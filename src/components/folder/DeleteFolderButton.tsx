@@ -40,6 +40,8 @@ export function DeleteFolderButton({
     <Button
       variant={variant}
       size="icon"
+      aria-label="Delete folder"
+      title="Delete folder"
       onClick={handleDelete}
       disabled={isPending}
       className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"

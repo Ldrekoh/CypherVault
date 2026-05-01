@@ -28,9 +28,9 @@ export function VaultHeader({ encryptedKey }: { encryptedKey: string }) {
           </Badge>
         )}
       </div>
-
-      {/* Le bouton n'apparaît QUE si le store est vide (après un reload par exemple) */}
-      {!isUnlocked && <UnlockVaultDialog encryptedKey={encryptedKey} />}
+      {!isUnlocked && encryptedKey && (
+        <UnlockVaultDialog encryptedKey={encryptedKey} />
+      )}
     </div>
   );
 }

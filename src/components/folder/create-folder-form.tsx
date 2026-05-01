@@ -60,9 +60,9 @@ export function CreateFolderForm({
           <form className="p-6 md:p-8" onSubmit={form.handleSubmit(onSubmit)}>
             <FieldGroup>
               <div className="flex flex-col items-center gap-2 text-center">
-                <h1 className="text-2xl font-bold">Sign in to your account</h1>
+                <h1 className="text-2xl font-bold">Create a new folder</h1>+{" "}
                 <p className="text-sm text-balance text-muted-foreground">
-                  Enter your details below to sign in to your account
+                  + Organize your secrets by creating folders +{" "}
                 </p>
               </div>
               <Field>
@@ -79,7 +79,7 @@ export function CreateFolderForm({
                   </p>
                 ) : (
                   <FieldDescription>
-                    We&apos;ll never share your folder name with anyone else.
+                    Enter a descriptive name for your folder.{" "}
                   </FieldDescription>
                 )}
               </Field>

@@ -31,20 +31,20 @@ export default async function DashboardPage() {
 
       {/* Contenu normal du Dashboard qui ne s'affiche/déverrouille que si hasVault est true */}
       {hasVault ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 ">
           <h1 className="text-2xl font-bold italic uppercase tracking-tighter">
             Bienvenue dans votre coffre, {currentUser.name}
           </h1>
-          <DebugVault />
+          {process.env.NODE_ENV === "development" && <DebugVault />}
+
+          <CreateFolderForm />
+          <FolderList />
         </div>
       ) : (
         <div className="flex h-[50vh] items-center justify-center italic text-muted-foreground">
           En attente de la configuration du coffre-fort...
         </div>
       )}
-
-      <CreateFolderForm />
-      <FolderList />
     </div>
   );
 }

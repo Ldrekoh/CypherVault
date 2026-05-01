@@ -42,7 +42,13 @@ export function UnlockVaultDialog({ encryptedKey }: { encryptedKey: string }) {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        setIsOpen(open);
+        if (!open) setPassphrase("");
+      }}
+    >
       <DialogTrigger asChild>
         <Button
           variant="outline"

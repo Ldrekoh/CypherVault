@@ -51,13 +51,12 @@ export function SetupVaultForm({
         data.passphrase,
       );
 
-      const { unlockedKey, ...dataForDb } = cryptoData;
+      const { ...dataForDb } = cryptoData;
 
       // 2. Enregistrement en base de données
       const result = await setupVaultAction(dataForDb);
 
       if (result.success) {
-        console.log("Clé déverrouillée stockée dans Zustand :", unlockedKey);
         setGeneratedCode(cryptoData.recoveryCode);
         setShowModal(true);
         toast.success("Coffre-fort généré avec succès !");

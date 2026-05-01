@@ -60,9 +60,10 @@ export default function HomePage() {
             <span className="text-primary italic">you</span>. Not us.
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            A privacy-first password manager built with **Next.js 16** and
-            **OpenPGP**. Client-side encryption ensures your plaintext never
-            touches our servers.
+            A privacy-first password manager built with{" "}
+            <strong>Next.js 16</strong> and + <strong>OpenPGP</strong>.
+            Client-side encryption ensures your plaintext never touches our
+            servers.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
             <Link href="/sign-up">
