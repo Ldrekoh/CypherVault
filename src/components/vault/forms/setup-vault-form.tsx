@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { generateUserKeys } from "@/lib/crypto";
 import { cn } from "@/lib/utils";
 import { setupVaultAction } from "@/server/vault/vault-action";
-import { vaultSchemaValidation } from "@/validations/vault-schema-validation";
+import { setupVaultSchemaValidation } from "@/validations/vault-schema-validation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LockKeyhole, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -33,15 +33,15 @@ export function SetupVaultForm({
   const [isloading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof vaultSchemaValidation>>({
-    resolver: zodResolver(vaultSchemaValidation),
+  const form = useForm<z.infer<typeof setupVaultSchemaValidation>>({
+    resolver: zodResolver(setupVaultSchemaValidation),
     defaultValues: {
       passphrase: "",
       confirmPassphrase: "",
     },
   });
 
-  const onSubmit = async (data: z.infer<typeof vaultSchemaValidation>) => {
+  const onSubmit = async (data: z.infer<typeof setupVaultSchemaValidation>) => {
     setIsLoading(true);
     try {
       // 1. Génération des clés PGP (Zero-Knowledge)
@@ -51,10 +51,13 @@ export function SetupVaultForm({
         data.passphrase,
       );
 
+      const { unlockedKey, ...dataForDb } = cryptoData;
+
       // 2. Enregistrement en base de données
-      const result = await setupVaultAction(cryptoData);
+      const result = await setupVaultAction(dataForDb);
 
       if (result.success) {
+        console.log("Clé déverrouillée stockée dans Zustand :", unlockedKey);
         setGeneratedCode(cryptoData.recoveryCode);
         setShowModal(true);
         toast.success("Coffre-fort généré avec succès !");

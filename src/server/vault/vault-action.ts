@@ -11,17 +11,28 @@ interface CryptoData {
   encryptedPrivateKeyRecovery: string;
 }
 
-export async function setupVaultAction(cryptoData: CryptoData) {
+const getExistingKeys = async (
+  userId: string,
+  type: "primary" | "recovery",
+) => {
+  return await db.query.userKeys.findFirst({
+    where: (keys, { and, eq }) =>
+      and(eq(keys.userId, userId), eq(keys.keyType, type)),
+  });
+};
+
+export const setupVaultAction = async (cryptoData: CryptoData) => {
   const { currentUser } = await getCurrentUser();
+
   if (!currentUser) return { success: false, message: "Non autorisé" };
 
-  // Guard: prevent duplicate vault initialization
-  const existingPrimary = await db.query.userKeys.findFirst({
-    where: (keys, { and, eq }) =>
-      and(eq(keys.userId, currentUser.id), eq(keys.keyType, "primary")),
-  });
-  if (existingPrimary) {
-    return { success: false, message: "Vault already initialized" };
+  const existingPrimaryKey = await getExistingKeys(currentUser.id, "primary");
+
+  if (existingPrimaryKey) {
+    return {
+      success: false,
+      message: "Une clé primaire existe déjà pour cet utilisateur",
+    };
   }
 
   try {
@@ -56,4 +67,4 @@ export async function setupVaultAction(cryptoData: CryptoData) {
       message: "Erreur lors de l'enregistrement des clés",
     };
   }
-}
+};

@@ -1,3 +1,6 @@
+import { CreateFolderForm } from "@/components/folder/create-folder-form";
+import { FolderList } from "@/components/folder/folder-list";
+import { DebugVault } from "@/components/vault/forms/debug-vault";
 import { SetupVaultModal } from "@/components/vault/forms/setup-vault-modal";
 import { db } from "@/db/drizzle";
 import { userKeys } from "@/db/schema";
@@ -32,13 +35,16 @@ export default async function DashboardPage() {
           <h1 className="text-2xl font-bold italic uppercase tracking-tighter">
             Bienvenue dans votre coffre, {currentUser.name}
           </h1>
-          {/* Tes composants de secrets ici */}
+          <DebugVault />
         </div>
       ) : (
         <div className="flex h-[50vh] items-center justify-center italic text-muted-foreground">
           En attente de la configuration du coffre-fort...
         </div>
       )}
+
+      <CreateFolderForm />
+      <FolderList />
     </div>
   );
 }

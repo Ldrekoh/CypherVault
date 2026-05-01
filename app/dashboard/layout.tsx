@@ -1,6 +1,8 @@
 import { Navbar } from "@/components/layout/navbar";
+import { db } from "@/db/drizzle";
+import { userKeys } from "@/db/schema";
 import { getCurrentUser } from "@/server/auth/auth-action";
-import { redirect } from "next/navigation";
+import { eq } from "drizzle-orm";
 
 export default async function DashboardLayout({
   children,
@@ -8,15 +10,17 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { currentUser } = await getCurrentUser();
-
-  if (!currentUser) {
-    redirect("/sign-in");
-  }
+  const keys = await db.query.userKeys.findFirst({
+    where: eq(userKeys.userId, currentUser.id),
+  });
 
   return (
-    <div className="relative flex min-h-screen flex-col">
-      <Navbar userName={currentUser.name} />
-      <main className="flex-1 container py-6">{children}</main>
-    </div>
+    <>
+      <Navbar
+        userName={currentUser.name}
+        encryptedKey={keys?.encryptedPrivateKey || ""}
+      />
+      <main>{children}</main>
+    </>
   );
 }
