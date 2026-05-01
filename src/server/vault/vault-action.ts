@@ -15,6 +15,15 @@ export async function setupVaultAction(cryptoData: CryptoData) {
   const { currentUser } = await getCurrentUser();
   if (!currentUser) return { success: false, message: "Non autorisé" };
 
+  // Guard: prevent duplicate vault initialization
+  const existingPrimary = await db.query.userKeys.findFirst({
+    where: (keys, { and, eq }) =>
+      and(eq(keys.userId, currentUser.id), eq(keys.keyType, "primary")),
+  });
+  if (existingPrimary) {
+    return { success: false, message: "Vault already initialized" };
+  }
+
   try {
     // db.batch prend un tableau de requêtes
     await db.batch([
@@ -38,7 +47,10 @@ export async function setupVaultAction(cryptoData: CryptoData) {
 
     return { success: true };
   } catch (e) {
-    console.error("DB Batch Error:", e);
+    console.error("Vault setup DB error", {
+      userId: currentUser.id,
+      error: e instanceof Error ? e.message : "unknown",
+    });
     return {
       success: false,
       message: "Erreur lors de l'enregistrement des clés",

@@ -11,7 +11,7 @@ export const getCurrentUser = async () => {
   });
 
   if (!session) {
-    redirect("/signin");
+    redirect("/sign-in");
   }
 
   const currentUser = await db.query.user.findFirst({
@@ -22,7 +22,7 @@ export const getCurrentUser = async () => {
   });
 
   if (!currentUser) {
-    redirect("/signin");
+    redirect("/sign-in");
   }
 
   return {

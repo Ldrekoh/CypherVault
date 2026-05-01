@@ -32,6 +32,16 @@ export function RecoveryModal({
     setCopied(true);
     toast.success("Code copié dans le presse-papier");
     setTimeout(() => setCopied(false), 2000);
+    navigator.clipboard
+      .writeText(recoveryCode)
+      .then(() => {
+        setCopied(true);
+        toast.success("Code copié dans le presse-papier");
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {
+        toast.error("Impossible de copier le code");
+      });
   };
 
   const downloadRecoveryCode = () => {
@@ -47,6 +57,9 @@ export function RecoveryModal({
     element.download = "recovery-code-vault.txt";
     document.body.appendChild(element);
     element.click();
+    document.body.removeChild(element);
+    URL.revokeObjectURL(element.href);
+    toast.success("Fichier de récupération téléchargé");
   };
 
   return (

@@ -55,7 +55,7 @@ export function SignupForm({
     } catch (error) {
       console.error(error);
       toast.error(
-        `Security setup failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Sign-up failed: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsLoading(false);
