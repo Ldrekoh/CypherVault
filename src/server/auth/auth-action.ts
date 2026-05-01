@@ -1,24 +1,28 @@
-'use server';
+"use server";
 
-import { db } from '@/db/drizzle';
-import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
+import { db } from "@/db/drizzle";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+
 export const getCurrentUser = async () => {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
 
   if (!session) {
-    redirect('/signin');
+    redirect("/sign-in");
   }
 
   const currentUser = await db.query.user.findFirst({
     where: (user, { eq }) => eq(user.id, session.user.id),
+    with: {
+      keys: true, // Inclure les clés de l'utilisateur
+    },
   });
 
   if (!currentUser) {
-    redirect('/signin');
+    redirect("/sign-in");
   }
 
   return {
@@ -27,7 +31,11 @@ export const getCurrentUser = async () => {
   };
 };
 
-export const signUpAction = async (name: string, email: string, password: string) => {
+export const signUpAction = async (
+  name: string,
+  email: string,
+  password: string,
+) => {
   try {
     await auth.api.signUpEmail({
       body: {
@@ -39,14 +47,15 @@ export const signUpAction = async (name: string, email: string, password: string
 
     return {
       success: true,
-      message: 'Sign-up successful! Please check your email to verify your account.',
+      message:
+        "Sign-up successful! Please check your email to verify your account.",
     };
   } catch (error) {
     const e = error as Error;
-    console.error('Sign-up error:', e);
+    console.error("Sign-up error:", e);
     return {
       success: false,
-      message: 'Sign-up failed. Please try again.',
+      message: "Sign-up failed. Please try again.",
     };
   }
 };
@@ -62,14 +71,14 @@ export const signInAction = async (email: string, password: string) => {
 
     return {
       success: true,
-      message: 'Sign-in successful!',
+      message: "Sign-in successful!",
     };
   } catch (error) {
     const e = error as Error;
-    console.error('Sign-in error:', e);
+    console.error("Sign-in error:", e);
     return {
       success: false,
-      message: 'Sign-in failed. Please check your credentials.',
+      message: "Sign-in failed. Please check your credentials.",
     };
   }
 };
