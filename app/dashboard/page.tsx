@@ -1,3 +1,6 @@
+import { CreateFolderForm } from "@/components/folder/create-folder-form";
+import { FolderList } from "@/components/folder/folder-list";
+import { DebugVault } from "@/components/vault/forms/debug-vault";
 import { SetupVaultModal } from "@/components/vault/forms/setup-vault-modal";
 import { db } from "@/db/drizzle";
 import { userKeys } from "@/db/schema";
@@ -28,11 +31,14 @@ export default async function DashboardPage() {
 
       {/* Contenu normal du Dashboard qui ne s'affiche/déverrouille que si hasVault est true */}
       {hasVault ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 ">
           <h1 className="text-2xl font-bold italic uppercase tracking-tighter">
             Bienvenue dans votre coffre, {currentUser.name}
           </h1>
-          {/* Tes composants de secrets ici */}
+          {process.env.NODE_ENV === "development" && <DebugVault />}
+
+          <CreateFolderForm />
+          <FolderList />
         </div>
       ) : (
         <div className="flex h-[50vh] items-center justify-center italic text-muted-foreground">

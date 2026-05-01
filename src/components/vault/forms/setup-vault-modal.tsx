@@ -1,6 +1,11 @@
 "use client";
 
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ShieldAlert } from "lucide-react";
 import { SetupVaultForm } from "./setup-vault-form";
 
@@ -32,9 +37,9 @@ export function SetupVaultModal({ user, isOpen }: SetupVaultModalProps) {
         </div>
 
         <div className="px-6 pb-6 text-center">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
+          <DialogDescription className="text-xs text-muted-foreground">
             Chiffrement de bout en bout activé (AES-256 + OpenPGP)
-          </p>
+          </DialogDescription>
         </div>
       </DialogContent>
     </Dialog>

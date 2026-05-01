@@ -1,6 +1,6 @@
 import * as z from "zod";
 
-export const vaultSchemaValidation = z
+export const setupVaultSchemaValidation = z
   .object({
     passphrase: z.string().min(12, {
       message:
@@ -16,4 +16,4 @@ export const vaultSchemaValidation = z
     path: ["confirmPassphrase"],
   });
 
-export type VaultData = z.infer<typeof vaultSchemaValidation>;
+export type VaultData = z.infer<typeof setupVaultSchemaValidation>;

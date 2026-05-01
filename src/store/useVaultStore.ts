@@ -1,10 +1,11 @@
-import * as openpgp from "openpgp";
+// store/use-vault-store.ts
+import { PrivateKey } from "openpgp";
 import { create } from "zustand";
 
 interface VaultState {
-  unlockedKey: openpgp.PrivateKey | null;
+  unlockedKey: PrivateKey | null;
   isUnlocked: boolean;
-  setUnlockedKey: (key: openpgp.PrivateKey) => void;
+  setUnlockedKey: (key: PrivateKey) => void;
   lockVault: () => void;
 }
 
