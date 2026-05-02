@@ -4,7 +4,17 @@ import { Trash2 } from "lucide-react";
 
 export default async function TrashPage() {
   const foldersStatus = await getDeletedFoldersAction();
-  const folders = foldersStatus.success ? foldersStatus.folders : [];
+  if (!foldersStatus.success) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-10">
+        <p className="text-sm text-destructive">
+          Impossible de charger la corbeille pour le moment.
+        </p>
+      </div>
+    );
+  }
+
+  const folders = foldersStatus.folders;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-10 space-y-12">

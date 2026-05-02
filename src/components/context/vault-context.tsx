@@ -27,6 +27,8 @@ export function VaultProvider({ children }: { children: React.ReactNode }) {
 
           if (key.isPrivate()) {
             setKey(key as openpgp.PrivateKey);
+          } else {
+            sessionStorage.removeItem("cyphervault_session_key");
           }
         }
       } catch (error) {

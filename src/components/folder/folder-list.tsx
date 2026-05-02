@@ -43,6 +43,14 @@ export const FolderList = () => {
     fetchFolders();
   }, [isLocked, isHydrated]);
 
+  if (error) {
+    return (
+      <div className="mt-8 rounded-2xl border border-destructive/30 bg-destructive/5 p-6 text-sm text-destructive">
+        {error}
+      </div>
+    );
+  }
+
   // --- ÉTATS DE TRANSITION (UX SKELETONS) ---
   if (!isHydrated || loading) {
     return (

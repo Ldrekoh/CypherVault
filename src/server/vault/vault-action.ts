@@ -76,11 +76,14 @@ export const keysExistAction = async () => {
   try {
     const keys = await getExistingKeys(currentUser.id, "primary");
 
-    return {
-      success: true,
-      hasKeys: !!keys,
-      encryptedPrivateKey: keys?.encryptedPrivateKey, 
-    };
+    if (keys) {
+      return {
+        success: true,
+        hasKeys: true,
+        encryptedPrivateKey: keys.encryptedPrivateKey,
+      };
+    }
+    return { success: true, hasKeys: false };
   } catch (e) {
     console.error("Error checking keys existence", {
       userId: currentUser.id,

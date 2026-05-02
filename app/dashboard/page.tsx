@@ -12,8 +12,17 @@ export default async function DashboardPage() {
 
   const vaultStatus = await keysExistAction();
 
-  // On définit hasVault par rapport au retour de l'action
-  const hasVault = vaultStatus.success && vaultStatus.hasKeys;
+  if (!vaultStatus.success) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-10">
+        <p className="text-sm text-destructive">
+          Impossible de vérifier l&apos;état du coffre pour le moment.
+        </p>
+      </div>
+    );
+  }
+
+  const hasVault = vaultStatus.hasKeys;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-10 space-y-12">

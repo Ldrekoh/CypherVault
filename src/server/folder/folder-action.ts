@@ -213,6 +213,11 @@ export const renameFolderAction = async (folderId: string, newName: string) => {
       return { success: false, message: "Invalid folder id" };
     }
 
+    const nameCheck = z.string().min(1).max(255).safeParse(newName);
+    if (!nameCheck.success) {
+      return { success: false, message: "Invalid folder name" };
+    }
+
     const { currentUser } = await getCurrentUser();
 
     if (!currentUser) {

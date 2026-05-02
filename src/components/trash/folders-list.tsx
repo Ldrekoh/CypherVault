@@ -18,6 +18,13 @@ import {
   Trash2,
 } from "lucide-react";
 
+import {
+  hardDeleteFolderAction,
+  restoreFolderAction,
+} from "@/server/folder/folder-action";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 interface DeletedFolder {
   id: string;
   name: string;
@@ -29,6 +36,30 @@ interface FoldersListProps {
 }
 
 export const FoldersList = ({ folders }: FoldersListProps) => {
+  const router = useRouter();
+  const [pendingId, setPendingId] = useState<string | null>(null);
+
+  const handleRestore = async (folderId: string) => {
+    setPendingId(folderId);
+    const res = await restoreFolderAction(folderId);
+    setPendingId(null);
+    if (res.success) {
+      router.refresh();
+      toast.success(res.message);
+    } else toast.error(res.message);
+  };
+
+  const handleHardDelete = async (folderId: string) => {
+    if (!confirm("Supprimer définitivement ce dossier ?")) return;
+    setPendingId(folderId);
+    const res = await hardDeleteFolderAction(folderId);
+    setPendingId(null);
+    if (res.success) {
+      router.refresh();
+      toast.success(res.message);
+    } else toast.error(res.message);
+  };
+
   if (folders.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24 border-2 border-dashed rounded-[3rem] bg-muted/5 opacity-50">
@@ -92,11 +123,19 @@ export const FoldersList = ({ folders }: FoldersListProps) => {
                   align="end"
                   className="w-48 rounded-xl font-bold uppercase text-[10px] italic"
                 >
-                  <DropdownMenuItem className="gap-2 cursor-pointer focus:text-primary">
+                  <DropdownMenuItem
+                    className="gap-2 cursor-pointer focus:text-primary"
+                    onClick={() => handleRestore(folder.id)}
+                    disabled={pendingId === folder.id}
+                  >
                     <RotateCcw className="h-3.5 w-3.5" />
                     Restaurer le dossier
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="gap-2 cursor-pointer focus:text-destructive text-destructive/80">
+                  <DropdownMenuItem
+                    className="gap-2 cursor-pointer focus:text-primary"
+                    onClick={() => handleHardDelete(folder.id)}
+                    disabled={pendingId === folder.id}
+                  >
                     <AlertTriangle className="h-3.5 w-3.5" />
                     Suppression définitive
                   </DropdownMenuItem>
@@ -107,7 +146,11 @@ export const FoldersList = ({ folders }: FoldersListProps) => {
 
           {/* OVERLAY DE RESTAURATION RAPIDE AU HOVER */}
           <div className="absolute inset-x-0 bottom-0 p-2 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-linear-to-t from-background/80 to-transparent">
-            <Button className="w-full h-8 rounded-xl text-[10px] font-black uppercase italic gap-2 transition-all hover:scale-[1.02]">
+            <Button
+              className="w-full h-8 rounded-xl text-[10px] font-black uppercase italic gap-2 transition-all hover:scale-[1.02]"
+              onClick={() => handleRestore(folder.id)}
+              disabled={pendingId === folder.id}
+            >
               <RotateCcw className="h-3 w-3" />
               Récupérer maintenant
             </Button>
