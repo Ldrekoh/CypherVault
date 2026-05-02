@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { softDeleteFolderAction } from "@/server/folder/folder-action";
 import { Loader2, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -15,6 +16,7 @@ export function DeleteFolderButton({
   folderId,
   variant = "ghost",
 }: DeleteFolderButtonProps) {
+  const router = useRouter();
   const [isPending, setIsPending] = useState(false);
 
   const handleDelete = async () => {
@@ -24,6 +26,7 @@ export function DeleteFolderButton({
     try {
       const res = await softDeleteFolderAction(folderId);
       if (res.success) {
+        router.refresh();
         toast.success(res.message);
       } else {
         toast.error(res.message);

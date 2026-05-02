@@ -68,3 +68,27 @@ export const setupVaultAction = async (cryptoData: CryptoData) => {
     };
   }
 };
+
+export const keysExistAction = async () => {
+  const { currentUser } = await getCurrentUser();
+  if (!currentUser) return { success: false, message: "Non autorisé" };
+
+  try {
+    const keys = await getExistingKeys(currentUser.id, "primary");
+
+    return {
+      success: true,
+      hasKeys: !!keys,
+      encryptedPrivateKey: keys?.encryptedPrivateKey, 
+    };
+  } catch (e) {
+    console.error("Error checking keys existence", {
+      userId: currentUser.id,
+      error: e instanceof Error ? e.message : "unknown",
+    });
+    return {
+      success: false,
+      message: "Erreur lors de la vérification des clés",
+    };
+  }
+};

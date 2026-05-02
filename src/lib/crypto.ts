@@ -1,16 +1,11 @@
 import * as openpgp from "openpgp";
 
-/**
- * Déchiffre une clé privée PGP avec une passphrase
- * Utilisé lors du login ou du déverrouillage du Vault
- */
 export const unlockPrivateKey = async (
   armoredKey: string,
   passphrase: string,
 ) => {
   const privateKey = await openpgp.readPrivateKey({ armoredKey });
 
-  // Cette fonction retourne l'objet PrivateKey déverrouillé en RAM
   return await openpgp.decryptKey({
     privateKey,
     passphrase,
