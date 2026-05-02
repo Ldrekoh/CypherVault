@@ -1,101 +1,84 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 import { createFolderAction } from "@/server/folder/folder-action";
 import { folderSchemaValidation } from "@/validations/folder-schema-validation";
 import { zodResolver } from "@hookform/resolvers/zod";
-
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
 
-export function CreateFolderForm({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
-  const [isloading, setIsLoading] = useState(false);
+import { Button } from "@/components/ui/button";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { useRouter } from "next/navigation";
+
+interface CreateFolderFormProps {
+  onSuccess?: () => void;
+}
+
+export function CreateFolderForm({ onSuccess }: CreateFolderFormProps) {
+  const router = useRouter();
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof folderSchemaValidation>>({
     resolver: zodResolver(folderSchemaValidation),
-    defaultValues: {
-      name: "",
-    },
+    defaultValues: { name: "" },
   });
 
   const onSubmit = async (data: z.infer<typeof folderSchemaValidation>) => {
     setIsLoading(true);
     try {
       const { success, message } = await createFolderAction(data);
-
       if (success) {
         toast.success(message as string);
         form.reset();
+        router.refresh(); // Rafraîchit la page pour afficher le nouveau dossier
+        onSuccess?.();
       } else {
         toast.error(message as string);
       }
     } catch (error) {
-      console.error("Create folder     error:", error);
-      toast.error(
-        `An unexpected error occurred ${error instanceof Error ? error.message : ""}`,
-      );
+      console.error("Create folder error:", error);
+      toast.error("Erreur lors de la création");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card className="overflow-hidden p-0">
-        <CardContent className="grid p-0 md:grid-cols-2">
-          <form className="p-6 md:p-8" onSubmit={form.handleSubmit(onSubmit)}>
-            <FieldGroup>
-              <div className="flex flex-col items-center gap-2 text-center">
-                <h1 className="text-2xl font-bold">Create a new folder</h1>+{" "}
-                <p className="text-sm text-balance text-muted-foreground">
-                  + Organize your secrets by creating folders +{" "}
-                </p>
-              </div>
-              <Field>
-                <FieldLabel htmlFor="name">Folder Name</FieldLabel>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="Enter folder name"
-                  {...form.register("name")}
-                />
-                {form.formState.errors.name ? (
-                  <p className="text-xs font-medium text-destructive">
-                    {form.formState.errors.name.message}
-                  </p>
-                ) : (
-                  <FieldDescription>
-                    Enter a descriptive name for your folder.{" "}
-                  </FieldDescription>
-                )}
-              </Field>
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <FieldGroup>
+        <Field>
+          <FieldLabel className="text-xs uppercase font-black">
+            Nom du dossier
+          </FieldLabel>
+          <Input
+            placeholder="Ex: Personnel"
+            {...form.register("name")}
+            className="h-11"
+          />
+          {form.formState.errors.name && (
+            <p className="text-xs text-destructive">
+              {form.formState.errors.name.message}
+            </p>
+          )}
+        </Field>
+      </FieldGroup>
 
-              <Button
-                variant="default"
-                type="submit"
-                className="w-full"
-                disabled={isloading}
-              >
-                {isloading ? "Creating..." : "Create Folder"}
-              </Button>
-            </FieldGroup>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+      <Button
+        type="submit"
+        className="w-full font-black uppercase italic"
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <Loader2 className="animate-spin h-4 w-4" />
+        ) : (
+          "Créer le dossier"
+        )}
+      </Button>
+    </form>
   );
 }
