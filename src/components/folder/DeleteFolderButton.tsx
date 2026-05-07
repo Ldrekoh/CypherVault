@@ -24,12 +24,12 @@ export function DeleteFolderButton({
 
     setIsPending(true);
     try {
-      const res = await softDeleteFolderAction(folderId);
-      if (res.success) {
+      const { success, message } = await softDeleteFolderAction(folderId);
+      if (success) {
         router.refresh();
-        toast.success(res.message);
+        toast.success(message as string);
       } else {
-        toast.error(res.message);
+        toast.error(message as string);
       }
     } catch (err) {
       console.error("Delete folder error:", err);

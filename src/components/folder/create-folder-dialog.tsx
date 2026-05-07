@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { FolderPlus } from "lucide-react";
 import { useState } from "react";
-import { CreateFolderForm } from "./create-folder-form"; // L'import du composant ci-dessus
+import { CreateFolderForm } from "./create-folder-form"; 
 
 export function CreateFolderDialog() {
   const [isOpen, setIsOpen] = useState(false);

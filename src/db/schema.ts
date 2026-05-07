@@ -11,7 +11,15 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────────────────────────────────────
+
 export const keyTypeEnum = pgEnum("key_type", ["primary", "recovery"]);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AUTH (Better-Auth)
+// ─────────────────────────────────────────────────────────────────────────────
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -22,7 +30,7 @@ export const user = pgTable("user", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
-    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .$onUpdate(() => new Date())
     .notNull(),
 });
 
@@ -34,7 +42,7 @@ export const session = pgTable(
     token: text("token").notNull().unique(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
-      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .$onUpdate(() => new Date())
       .notNull(),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
@@ -63,7 +71,7 @@ export const account = pgTable(
     password: text("password"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
-      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .$onUpdate(() => new Date())
       .notNull(),
   },
   (table) => [index("account_userId_idx").on(table.userId)],
@@ -79,7 +87,7 @@ export const verification = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
-      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .$onUpdate(() => new Date())
       .notNull(),
   },
   (table) => [index("verification_identifier_idx").on(table.identifier)],
@@ -90,7 +98,7 @@ export const verification = pgTable(
 // ─────────────────────────────────────────────────────────────────────────────
 
 // 1. Coffre-fort des clés
-//    Lié à user.id (text) — id séparé pour supporter la rotation de clés
+//    id séparé de userId → supporte la rotation de clés sans changer l'user
 export const userKeys = pgTable(
   "user_keys",
   {
@@ -102,14 +110,14 @@ export const userKeys = pgTable(
     encryptedPrivateKey: text("encrypted_private_key").notNull(),
     recoveryHash: text("recovery_hash").notNull(),
     salt: text("salt").notNull(),
-    // "primary" | "recovery"
     keyType: keyTypeEnum("key_type").notNull().default("primary"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [index("user_keys_userId_idx").on(table.userId)],
 );
 
-// 2. Dossiers (déclaré avant vault_items — évite la ref circulaire)
+// 2. Dossiers
+//    Déclaré avant vault_items pour éviter la référence circulaire
 export const folders = pgTable(
   "folders",
   {
@@ -118,12 +126,13 @@ export const folders = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
-    color: text("color").notNull().default("#4c51bf"), // Couleur par défaut
+    color: text("color").notNull().default("#4c51bf"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
+    // Soft delete — filtrer sur deletedAt IS NULL dans toutes les requêtes
     deletedAt: timestamp("deleted_at"),
   },
   (table) => [
@@ -132,7 +141,7 @@ export const folders = pgTable(
   ],
 );
 
-// 3. Entrées du coffre (métadonnées)
+// 3. Entrées du coffre (métadonnées en clair)
 //    title / websiteUrl en clair → recherche côté serveur possible.
 //    Si confidentialité des métadonnées requise : les déplacer dans
 //    vault_secrets et gérer un index de recherche chiffré séparé.
@@ -143,6 +152,7 @@ export const vaultItems = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    // folder supprimé (hard) → item perd son dossier mais n'est pas supprimé
     folderId: uuid("folder_id").references((): AnyPgColumn => folders.id, {
       onDelete: "set null",
     }),
@@ -154,6 +164,7 @@ export const vaultItems = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
+    // Soft delete — sync applicatif obligatoire avec vaultSecrets.deletedAt
     deletedAt: timestamp("deleted_at"),
   },
   (table) => [
@@ -164,11 +175,14 @@ export const vaultItems = pgTable(
 );
 
 // 4. Secrets chiffrés
-//    userId dénormalisé → autorisation sans JOIN sur vault_items
+//    userId dénormalisé → autorisation sans JOIN sur vault_items.
+//    ⚠️  deletedAt doit toujours être synchronisé avec vaultItems.deletedAt
+//    côté applicatif — le cascade SQL ne couvre que les hard deletes.
 export const vaultSecrets = pgTable(
   "vault_secrets",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    // Hard delete de vaultItems → cascade hard sur vaultSecrets
     itemId: uuid("item_id")
       .notNull()
       .references(() => vaultItems.id, { onDelete: "cascade" }),
@@ -182,18 +196,23 @@ export const vaultSecrets = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
+    // Soft delete — doit miroir vaultItems.deletedAt (sync applicatif)
+    deletedAt: timestamp("deleted_at"),
   },
   (table) => [
     index("vault_secrets_itemId_idx").on(table.itemId),
     index("vault_secrets_userId_idx").on(table.userId),
+    index("vault_secrets_deletedAt_idx").on(table.deletedAt),
   ],
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RELATIONS
+// ─────────────────────────────────────────────────────────────────────────────
 
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   accounts: many(account),
-
-  // Relations métier
   keys: many(userKeys),
   folders: many(folders),
   vaultItems: many(vaultItems),
@@ -201,27 +220,20 @@ export const userRelations = relations(user, ({ many }) => ({
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
-  user: one(user, {
-    fields: [session.userId],
-    references: [user.id],
-  }),
+  user: one(user, { fields: [session.userId], references: [user.id] }),
 }));
 
 export const accountRelations = relations(account, ({ one }) => ({
-  user: one(user, {
-    fields: [account.userId],
-    references: [user.id],
-  }),
+  user: one(user, { fields: [account.userId], references: [user.id] }),
 }));
 
-// Métier
 export const userKeysRelations = relations(userKeys, ({ one }) => ({
   user: one(user, { fields: [userKeys.userId], references: [user.id] }),
 }));
 
 export const foldersRelations = relations(folders, ({ one, many }) => ({
   user: one(user, { fields: [folders.userId], references: [user.id] }),
-  items: many(vaultItems),
+  vaultItems: many(vaultItems),
 }));
 
 export const vaultItemsRelations = relations(vaultItems, ({ one }) => ({
@@ -237,22 +249,29 @@ export const vaultItemsRelations = relations(vaultItems, ({ one }) => ({
 }));
 
 export const vaultSecretsRelations = relations(vaultSecrets, ({ one }) => ({
-  item: one(vaultItems, {
+  vaultItem: one(vaultItems, {
     fields: [vaultSecrets.itemId],
     references: [vaultItems.id],
   }),
   user: one(user, { fields: [vaultSecrets.userId], references: [user.id] }),
 }));
 
+// ─────────────────────────────────────────────────────────────────────────────
+// EXPORT
+// ─────────────────────────────────────────────────────────────────────────────
+
 export const schema = {
+  // Auth
   user,
   session,
   account,
   verification,
+  // Métier
   userKeys,
   folders,
   vaultItems,
   vaultSecrets,
+  // Relations
   userRelations,
   sessionRelations,
   accountRelations,

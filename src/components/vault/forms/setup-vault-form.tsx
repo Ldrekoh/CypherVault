@@ -2,21 +2,14 @@
 
 import { RecoveryModal } from "@/components/forms/auth/RecoveryCodeModal";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { generateUserKeys } from "@/lib/crypto";
 import { cn } from "@/lib/utils";
 import { setupVaultAction } from "@/server/vault/vault-action";
 import { setupVaultSchemaValidation } from "@/validations/vault-schema-validation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LockKeyhole, ShieldCheck } from "lucide-react";
+import { KeyRound, Loader2, LockKeyhole, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -25,7 +18,7 @@ import z from "zod";
 
 export function SetupVaultForm({
   className,
-  user, // Passe l'utilisateur depuis la page serveur
+  user,
   ...props
 }: React.ComponentProps<"div"> & { user: { name: string; email: string } }) {
   const [showModal, setShowModal] = useState(false);
@@ -44,28 +37,24 @@ export function SetupVaultForm({
   const onSubmit = async (data: z.infer<typeof setupVaultSchemaValidation>) => {
     setIsLoading(true);
     try {
-      // 1. Génération des clés PGP (Zero-Knowledge)
+      // Simulation de latence pour l'effet "Calcul"
       const cryptoData = await generateUserKeys(
         user.name,
         user.email,
         data.passphrase,
       );
 
-      const { ...dataForDb } = cryptoData;
-
-      // 2. Enregistrement en base de données
-      const result = await setupVaultAction(dataForDb);
+      const result = await setupVaultAction(cryptoData);
 
       if (result.success) {
         setGeneratedCode(cryptoData.recoveryCode);
         setShowModal(true);
-        toast.success("Coffre-fort généré avec succès !");
+        toast.success("Architecture Zero-Knowledge déployée.");
       } else {
         toast.error(result.message);
       }
     } catch (error) {
-      console.error(error);
-      toast.error("Erreur critique lors de la génération des clés.");
+      toast.error("Erreur de génération des clés.");
     } finally {
       setIsLoading(false);
     }
@@ -73,83 +62,95 @@ export function SetupVaultForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card className="shadow-lg border-primary/10">
-        <CardHeader className="space-y-1 text-center">
-          <div className="flex justify-center mb-2">
-            <div className="p-3 bg-primary/10 rounded-full">
-              <ShieldCheck className="h-8 w-8 text-primary" />
+      <div className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+          <div className="grid gap-4">
+            {/* PASSPHRASE */}
+            <div className="space-y-2">
+              <Label
+                htmlFor="passphrase"
+                className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1"
+              >
+                Maître Passphrase
+              </Label>
+              <div className="relative group">
+                <Input
+                  id="passphrase"
+                  type="password"
+                  placeholder="Minimum 12 caractères..."
+                  className="h-12 bg-secondary/30 border-white/5 rounded-xl pr-10 focus:ring-primary/20 transition-all"
+                  {...form.register("passphrase")}
+                />
+                <KeyRound className="absolute right-3 top-3.5 h-5 w-5 text-muted-foreground/30 group-focus-within:text-primary/50 transition-colors" />
+              </div>
+              {form.formState.errors.passphrase && (
+                <p className="text-[10px] font-bold text-destructive uppercase tracking-tight ml-1">
+                  {form.formState.errors.passphrase.message}
+                </p>
+              )}
+            </div>
+
+            {/* CONFIRMATION */}
+            <div className="space-y-2">
+              <Label
+                htmlFor="confirmPassphrase"
+                className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1"
+              >
+                Vérification du secret
+              </Label>
+              <Input
+                id="confirmPassphrase"
+                type="password"
+                placeholder="Répétez la phrase..."
+                className="h-12 bg-secondary/30 border-white/5 rounded-xl focus:ring-primary/20"
+                {...form.register("confirmPassphrase")}
+              />
+              {form.formState.errors.confirmPassphrase && (
+                <p className="text-[10px] font-bold text-destructive uppercase tracking-tight ml-1">
+                  {form.formState.errors.confirmPassphrase.message}
+                </p>
+              )}
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold italic uppercase tracking-tighter">
-            Initialisez votre Vault
-          </CardTitle>
-          <CardDescription>
-            Créez la clé maîtresse qui protégera vos secrets.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FieldGroup>
-              {/* PASSPHRASE */}
-              <Field>
-                <FieldLabel htmlFor="passphrase">Vault Passphrase</FieldLabel>
-                <div className="relative">
-                  <Input
-                    id="passphrase"
-                    type="password"
-                    placeholder="Votre phrase secrète..."
-                    className="pr-10"
-                    {...form.register("passphrase")}
-                  />
-                  <LockKeyhole className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground/50" />
-                </div>
-                {form.formState.errors.passphrase && (
-                  <p className="text-xs font-medium text-destructive mt-1">
-                    {form.formState.errors.passphrase.message}
-                  </p>
-                )}
-              </Field>
 
-              {/* CONFIRMATION */}
-              <Field>
-                <FieldLabel htmlFor="confirmPassphrase">
-                  Confirmez la Passphrase
-                </FieldLabel>
-                <Input
-                  id="confirmPassphrase"
-                  type="password"
-                  placeholder="Répétez la phrase..."
-                  {...form.register("confirmPassphrase")}
-                />
-                {form.formState.errors.confirmPassphrase && (
-                  <p className="text-xs font-medium text-destructive mt-1">
-                    {form.formState.errors.confirmPassphrase.message}
-                  </p>
-                )}
-              </Field>
+          {/* WARNING BOX DESIGN 2026 */}
+          <div className="relative overflow-hidden rounded-2xl bg-amber-500/5 border border-amber-500/10 p-4">
+            <div className="absolute top-0 left-0 w-1 h-full bg-amber-500/40" />
+            <div className="flex gap-3">
+              <LockKeyhole className="h-5 w-5 text-amber-500 shrink-0" />
+              <p className="text-[11px] leading-relaxed text-amber-700 dark:text-amber-400/80 font-medium">
+                <strong>SÉCURITÉ CRITIQUE :</strong> Cette phrase chiffre vos
+                clés privées localement. Aucune réinitialisation n&apos;est
+                possible via nos serveurs.
+              </p>
+            </div>
+          </div>
 
-              <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-3 text-xs text-amber-700 dark:text-amber-400">
-                ⚠️ <strong>Avertissement :</strong> Cette phrase est différente
-                de votre mot de passe de connexion. Si vous l&apos;oubliez, vos
-                données sont cryptées à jamais.
+          <Button
+            type="submit"
+            className={cn(
+              "w-full h-14 rounded-2xl font-black uppercase italic tracking-tighter transition-all duration-500",
+              isloading
+                ? "bg-muted"
+                : "shadow-[0_20px_40px_-10px_rgba(var(--primary),0.3)]",
+            )}
+            disabled={isloading}
+          >
+            {isloading ? (
+              <div className="flex items-center gap-3">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Génération RSA-4096...</span>
               </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5" />
+                <span>Activer le Coffre-Fort</span>
+              </div>
+            )}
+          </Button>
+        </form>
+      </div>
 
-              <Button
-                variant="default"
-                type="submit"
-                className="w-full font-bold h-11"
-                disabled={isloading}
-              >
-                {isloading
-                  ? "Génération des clés PGP..."
-                  : "Sécuriser mon compte"}
-              </Button>
-            </FieldGroup>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* MODALE DE RÉCUPÉRATION */}
       <RecoveryModal
         isOpen={showModal}
         recoveryCode={generatedCode}

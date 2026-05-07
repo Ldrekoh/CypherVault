@@ -1,5 +1,5 @@
-import { VaultProvider } from "@/components/context/vault-context";
 import { Navbar } from "@/components/layout/navbar";
+import { VaultProvider } from "@/context/vault-context";
 import { getCurrentUser } from "@/server/auth/auth-action";
 import { redirect } from "next/navigation";
 

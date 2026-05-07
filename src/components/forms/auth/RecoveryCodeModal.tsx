@@ -9,7 +9,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { AlertTriangle, CheckCircle2, Copy, Download } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Copy,
+  Download,
+  FileKey,
+  ShieldAlert,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -25,102 +33,154 @@ export function RecoveryModal({
   onConfirm,
 }: RecoveryModalProps) {
   const [copied, setCopied] = useState(false);
+  const [hasDownloaded, setHasDownloaded] = useState(false);
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (!recoveryCode) return;
-    navigator.clipboard.writeText(recoveryCode);
-    setCopied(true);
-    toast.success("Code copié dans le presse-papier");
-    setTimeout(() => setCopied(false), 2000);
-    navigator.clipboard
-      .writeText(recoveryCode)
-      .then(() => {
-        setCopied(true);
-        toast.success("Code copié dans le presse-papier");
-        setTimeout(() => setCopied(false), 2000);
-      })
-      .catch(() => {
-        toast.error("Impossible de copier le code");
-      });
+    try {
+      await navigator.clipboard.writeText(recoveryCode);
+      setCopied(true);
+      toast.success("Code copié — Gardez-le en lieu sûr");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Échec de la copie");
+    }
   };
 
-  const downloadRecoveryCode = () => {
+  const handleDownload = () => {
     if (!recoveryCode) return;
-    const element = document.createElement("a");
-    const file = new Blob(
-      [
-        `MON CODE DE RÉCUPÉRATION SECURE VAULT : ${recoveryCode}\n\nGardez ce code précieusement. Sans lui, vos données sont perdues en cas d'oubli de mot de passe.`,
-      ],
-      { type: "text/plain" },
-    );
-    element.href = URL.createObjectURL(file);
-    element.download = "recovery-code-vault.txt";
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-    URL.revokeObjectURL(element.href);
-    toast.success("Fichier de récupération téléchargé");
+
+    const content =
+      `--- CYPHERVAULT RECOVERY KEY ---\n\n` +
+      `KEY: ${recoveryCode}\n\n` +
+      `WARNING: This is your ONLY access key. If lost, your data\n` +
+      `cannot be recovered. Store this file offline (USB or Paper).`;
+
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `cyphervault-recovery-${new Date().getFullYear()}.txt`;
+    link.click();
+
+    URL.revokeObjectURL(url);
+    setHasDownloaded(true);
+    toast.success("Certificat de récupération généré");
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
-      {/* onOpenChange vide pour empêcher la fermeture en cliquant à côté */}
-      <DialogContent className="sm:max-w-md border-2 border-primary/20">
-        <DialogHeader className="flex flex-col items-center gap-2">
-          <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
-            <AlertTriangle className="h-6 w-6 text-destructive" />
+      <DialogContent className="sm:max-w-[480px] border-white/5 bg-background/95 backdrop-blur-2xl rounded-[2.5rem] shadow-[0_0_50px_-12px_rgba(239,68,68,0.15)] overflow-hidden">
+        {/* Barre de danger supérieure */}
+        <div className="absolute top-0 left-0 w-full h-1.5 bg-destructive/20">
+          <div
+            className="h-full bg-destructive w-1/3 animate-[shimmer_2s_infinite_linear]"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent, #ef4444, transparent)",
+            }}
+          />
+        </div>
+
+        <DialogHeader className="flex flex-col items-center gap-4 pt-4">
+          <div className="relative">
+            <div className="h-16 w-16 rounded-2xl bg-destructive/10 flex items-center justify-center border border-destructive/20 rotate-3">
+              <ShieldAlert className="h-8 w-8 text-destructive" />
+            </div>
+            <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-background border border-destructive/20 flex items-center justify-center animate-bounce">
+              <AlertTriangle className="h-3 w-3 text-destructive" />
+            </div>
           </div>
-          <DialogTitle className="text-xl text-center">
-            Action Requise : Sauvegardez votre accès
-          </DialogTitle>
-          <DialogDescription className="text-center">
-            Voici votre <strong>Code de Récupération</strong>. C&apos;est
-            l&apos;unique moyen de restaurer vos données si vous oubliez votre
-            mot de passe.
-          </DialogDescription>
+
+          <div className="space-y-1 text-center">
+            <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter">
+              Clé de <span className="text-destructive">Secours</span>
+            </DialogTitle>
+            <DialogDescription className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/70">
+              Protocole de récupération d&apos;urgence
+            </DialogDescription>
+          </div>
         </DialogHeader>
 
-        <div className="relative mt-4">
-          <div className="flex items-center justify-center p-6 bg-muted/50 rounded-xl border-2 border-dashed border-muted-foreground/20 font-mono text-2xl font-bold tracking-[0.2em] text-primary">
-            {recoveryCode}
-          </div>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="absolute top-2 right-2 hover:bg-primary/10"
-            onClick={handleCopy}
-          >
-            {copied ? (
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
-            ) : (
-              <Copy className="h-4 w-4" />
-            )}
-          </Button>
-        </div>
-
-        <div className="flex flex-col gap-2 mt-4 text-xs text-muted-foreground bg-secondary/30 p-3 rounded-lg text-center italic">
-          <p>
-            ⚠️ Nous ne stockons pas ce code. Si vous le perdez, nous ne pourrons
-            pas vous aider.
+        <div className="space-y-6 mt-4">
+          <p className="text-sm text-center leading-relaxed text-muted-foreground px-4">
+            Ceci est votre unique **Pass-Phrase**. Sans elle, l&apos;accès à
+            votre coffre sera **définitivement perdu** en cas d&apos;oubli.
           </p>
+
+          <div className="relative group">
+            <div
+              className={cn(
+                "flex items-center justify-center p-8 bg-secondary/30 rounded-[1.5rem] border-2 border-dashed transition-colors duration-500",
+                copied
+                  ? "border-emerald-500/50 bg-emerald-500/5"
+                  : "border-white/5 group-hover:border-primary/20",
+              )}
+            >
+              <span className="font-mono text-xl md:text-2xl font-black tracking-[0.25em] text-primary select-all">
+                {recoveryCode}
+              </span>
+            </div>
+
+            <Button
+              size="sm"
+              variant="secondary"
+              className="absolute -top-3 right-4 rounded-full border border-white/5 shadow-xl font-bold text-[10px] uppercase gap-2"
+              onClick={handleCopy}
+            >
+              {copied ? (
+                <>
+                  {" "}
+                  <CheckCircle2 className="h-3 w-3 text-emerald-500" />{" "}
+                  Copié{" "}
+                </>
+              ) : (
+                <>
+                  {" "}
+                  <Copy className="h-3 w-3" /> Copier{" "}
+                </>
+              )}
+            </Button>
+          </div>
+
+          <div className="bg-destructive/5 border border-destructive/10 rounded-2xl p-4 flex gap-4 items-start">
+            <FileKey className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="text-[10px] font-black uppercase tracking-wider text-destructive">
+                Avertissement de non-rétention
+              </p>
+              <p className="text-[11px] text-destructive/80 leading-tight font-medium italic">
+                Nous ne stockons aucune copie. Ce code n&apos;existe que sur cet
+                écran et dans votre futur stockage personnel.
+              </p>
+            </div>
+          </div>
         </div>
 
-        <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-4">
+        <DialogFooter className="flex flex-col sm:flex-row gap-3 mt-6">
           <Button
             type="button"
-            variant="outline"
-            className="flex-1 gap-2"
-            onClick={downloadRecoveryCode}
+            variant="ghost"
+            className="flex-1 gap-2 text-[11px] font-bold uppercase tracking-widest hover:bg-secondary/50 rounded-xl py-6"
+            onClick={handleDownload}
           >
-            <Download className="h-4 w-4" /> Télécharger (.txt)
+            <Download className="h-4 w-4" />
+            {hasDownloaded ? "Régénérer .txt" : "Exporter le kit"}
           </Button>
+
           <Button
             type="button"
-            className="flex-1"
+            className={cn(
+              "flex-1 py-6 rounded-xl font-black uppercase italic tracking-tight transition-all duration-500",
+              hasDownloaded
+                ? "bg-primary shadow-[0_10px_20px_-5px_rgba(var(--primary),0.4)]"
+                : "bg-muted text-muted-foreground",
+            )}
             onClick={onConfirm}
             disabled={!recoveryCode}
           >
-            J'ai sauvegardé le code
+            Protocole Validé
           </Button>
         </DialogFooter>
       </DialogContent>
