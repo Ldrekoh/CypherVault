@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { generateUserKeys } from "@/lib/crypto";
 import { cn } from "@/lib/utils";
-import { setupVaultAction } from "@/server/vault/vault-action";
+import { setupVaultAction } from "@/server/vault-action";
 import { setupVaultSchemaValidation } from "@/validations/vault-schema-validation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { KeyRound, Loader2, LockKeyhole, ShieldCheck } from "lucide-react";
