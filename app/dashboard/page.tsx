@@ -1,6 +1,6 @@
 import { SetupVaultModal } from "@/components/vault/forms/setup-vault-modal";
 import { UnlockVaultModal } from "@/components/vault/forms/unlock-vault-modal"; // Note le changement de nom pour cohérence
-import { getCurrentUser } from "@/server/auth/auth-action";
+import { getCurrentUser } from "@/server/auth-action";
 import { keysExistAction } from "@/server/vault/vault-action";
 import {
   Activity,

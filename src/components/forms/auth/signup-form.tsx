@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { signUpAction } from "@/server/auth/auth-action";
+import { signUpAction } from "@/server/auth-action";
 import { signupSchemaValidation } from "@/validations/auth-schema-validation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {

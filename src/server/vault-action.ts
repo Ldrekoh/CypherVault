@@ -1,7 +1,7 @@
 "use server";
 import { db } from "@/db/drizzle";
 import { userKeys } from "@/db/schema";
-import { getCurrentUser } from "../auth/auth-action";
+import { getCurrentUser } from "../auth-action";
 
 interface CryptoData {
   publicKey: string;

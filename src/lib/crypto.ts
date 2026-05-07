@@ -134,10 +134,11 @@ export const encryptSecret = async (
 ): Promise<string> => {
   const publicKey = await openpgp.readKey({ armoredKey: publicKeyArmored });
   const message = await openpgp.createMessage({ text });
-  return openpgp.encrypt({
+  return (await openpgp.encrypt({
     message,
     encryptionKeys: publicKey,
-  }) as Promise<string>;
+    format: "armored",
+  })) as string;
 };
 
 /** Déchiffre un message avec la clé privée déverrouillée (issue du VaultContext). */
